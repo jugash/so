@@ -1,0 +1,18 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "metalstack.fullname" . }}-postgres
+  namespace: {{ include "metalstack.namespace" . }}
+  labels:
+    {{- include "metalstack.postgres.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.postgres.service.type }}
+  ports:
+    - port: {{ .Values.postgres.service.port }}
+      targetPort: tcp-pg
+      protocol: TCP
+      name: tcp-pg
+  selector:
+    {{- include "metalstack.postgres.selectorLabels" . | nindent 4 }}
+{{- end }}

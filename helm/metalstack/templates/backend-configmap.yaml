@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "metalstack.fullname" . }}-backend-config
+  namespace: {{ include "metalstack.namespace" . }}
+  labels:
+    {{- include "metalstack.backend.labels" . | nindent 4 }}
+data:
+  SERVER_PORT: {{ .Values.backend.config.serverPort | quote }}
+  SPRING_PROFILES_ACTIVE: {{ .Values.backend.config.springProfiles | quote }}
+  CORS_ORIGINS: {{ .Values.backend.config.corsOrigins | quote }}
+  MAIL_FROM: {{ .Values.backend.config.mailFrom | quote }}
+  APP_BASE_URL: {{ .Values.backend.config.appBaseUrl | quote }}
+  LOGGING_LEVEL_COM_METALSTACK: {{ .Values.backend.config.loggingLevel | quote }}

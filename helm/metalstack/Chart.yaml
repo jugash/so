@@ -1,0 +1,15 @@
+apiVersion: v2
+name: metalstack
+description: MetalStack Q&A Platform — Umbrella Helm Chart
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+maintainers:
+  - name: MetalStack Team
+keywords:
+  - metalstack
+  - q-and-a
+  - spring-boot
+  - react
+  - keycloak
+  - postgresql

@@ -1,0 +1,353 @@
+# =============================================================================
+# MetalStack — Bamboo Build Plan (YAML Specs v2)
+# =============================================================================
+# Prerequisites:
+#   - Bamboo project MSTK must exist in your Bamboo instance
+#   - Agents must have: JDK 25, Node 22+, Docker, Helm 3 capabilities
+#   - Registry credentials configured as Bamboo shared credentials
+# =============================================================================
+
+---
+version: 2
+
+plan:
+  project-key: MSTK
+  key: BUILD
+  name: MetalStack — Build & Deploy
+
+# ---------------------------------------------------------------------------
+# Repositories
+# ---------------------------------------------------------------------------
+repositories:
+  - metalstack:
+      type: git
+      url: ${bamboo.repository.git.repositoryUrl}
+      branch: develop
+
+# ---------------------------------------------------------------------------
+# Variables
+# ---------------------------------------------------------------------------
+variables:
+  docker.registry: registry.internal.example.com/metalstack
+  helm.release.name: metalstack
+  helm.chart.path: ./helm/metalstack
+
+# ---------------------------------------------------------------------------
+# Triggers
+# ---------------------------------------------------------------------------
+triggers:
+  - polling:
+      period: 60
+
+# ---------------------------------------------------------------------------
+# Branch Configuration
+# ---------------------------------------------------------------------------
+branches:
+  create: for-new-branch
+  delete:
+    after-deleted-days: 7
+    after-inactive-days: 30
+  integration:
+    merge-from: develop
+    push-on-success: false
+
+# ---------------------------------------------------------------------------
+# Stage 1: Test
+# ---------------------------------------------------------------------------
+stages:
+  - Test:
+      jobs:
+        - Backend Tests:
+            key: BTEST
+            tasks:
+              - checkout:
+                  repository: metalstack
+                  force-clean-build: true
+
+              - script:
+                  interpreter: SHELL
+                  description: Run Backend Unit Tests
+                  scripts:
+                    - |
+                      echo "--- Running Backend Tests ---"
+                      cd backend
+                      chmod +x gradlew
+                      ./gradlew clean test jacocoTestReport
+                      echo "--- Backend Tests Complete ---"
+
+            artifacts:
+              - name: Backend Test Reports
+                location: backend/build/reports
+                pattern: "**/*"
+                shared: true
+
+              - name: JaCoCo Coverage
+                location: backend/build/reports/jacoco/test
+                pattern: "**/*"
+                shared: true
+
+            requirements:
+              - JDK 25
+
+        - Frontend Tests:
+            key: FTEST
+            tasks:
+              - checkout:
+                  repository: metalstack
+                  force-clean-build: true
+
+              - script:
+                  interpreter: SHELL
+                  description: Run Frontend Tests with Coverage
+                  scripts:
+                    - |
+                      echo "--- Running Frontend Tests ---"
+                      cd frontend
+                      npm ci
+                      npm run test
+                      npm run coverage
+                      echo "--- Frontend Tests Complete ---"
+
+            artifacts:
+              - name: Frontend Coverage
+                location: frontend/coverage
+                pattern: "**/*"
+                shared: true
+
+            requirements:
+              - Node.js 22
+
+  # ---------------------------------------------------------------------------
+  # Stage 2: Build & Package
+  # ---------------------------------------------------------------------------
+  - Build:
+      jobs:
+        - Build Backend:
+            key: BBUILD
+            tasks:
+              - checkout:
+                  repository: metalstack
+                  force-clean-build: true
+
+              - script:
+                  interpreter: SHELL
+                  description: Build Backend JAR
+                  scripts:
+                    - |
+                      echo "--- Building Backend JAR ---"
+                      cd backend
+                      chmod +x gradlew
+                      ./gradlew bootJar -x test
+                      echo "--- Backend JAR Built ---"
+                      ls -la build/libs/
+
+            artifacts:
+              - name: Backend JAR
+                location: backend/build/libs
+                pattern: "*.jar"
+                shared: true
+
+            requirements:
+              - JDK 25
+
+        - Build Frontend:
+            key: FBUILD
+            tasks:
+              - checkout:
+                  repository: metalstack
+                  force-clean-build: true
+
+              - script:
+                  interpreter: SHELL
+                  description: Build Frontend Bundle
+                  scripts:
+                    - |
+                      echo "--- Building Frontend Bundle ---"
+                      cd frontend
+                      npm ci
+                      npm run build
+                      echo "--- Frontend Bundle Built ---"
+                      du -sh dist/
+
+            artifacts:
+              - name: Frontend Dist
+                location: frontend/dist
+                pattern: "**/*"
+                shared: true
+
+            requirements:
+              - Node.js 22
+
+  # ---------------------------------------------------------------------------
+  # Stage 3: Docker Build & Push
+  # ---------------------------------------------------------------------------
+  - Docker:
+      jobs:
+        - Docker Backend:
+            key: DBACK
+            tasks:
+              - checkout:
+                  repository: metalstack
+                  force-clean-build: true
+
+              - script:
+                  interpreter: SHELL
+                  description: Build & Push Backend Image via Jib
+                  scripts:
+                    - |
+                      echo "--- Building Backend Docker Image via Jib ---"
+                      cd backend
+                      chmod +x gradlew
+                      ./gradlew jib \
+                        -Djib.to.image=${bamboo.docker.registry}/backend:${bamboo.buildNumber} \
+                        -Djib.to.tags=latest,${bamboo.buildNumber} \
+                        -Djib.to.auth.username=${bamboo.DOCKER_REGISTRY_USERNAME} \
+                        -Djib.to.auth.password=${bamboo.DOCKER_REGISTRY_PASSWORD}
+                      echo "--- Backend Image Pushed: ${bamboo.docker.registry}/backend:${bamboo.buildNumber} ---"
+
+            requirements:
+              - JDK 25
+
+        - Docker Frontend:
+            key: DFRONT
+            tasks:
+              - checkout:
+                  repository: metalstack
+                  force-clean-build: true
+
+              - script:
+                  interpreter: SHELL
+                  description: Build & Push Frontend Docker Image
+                  scripts:
+                    - |
+                      echo "--- Building Frontend Docker Image ---"
+                      cd frontend
+
+                      docker build \
+                        --build-arg VITE_API_URL=/api \
+                        --build-arg VITE_KEYCLOAK_URL=/auth \
+                        -t ${bamboo.docker.registry}/frontend:${bamboo.buildNumber} \
+                        -t ${bamboo.docker.registry}/frontend:latest \
+                        .
+
+                      echo "--- Pushing Frontend Docker Image ---"
+                      docker push ${bamboo.docker.registry}/frontend:${bamboo.buildNumber}
+                      docker push ${bamboo.docker.registry}/frontend:latest
+                      echo "--- Frontend Image Pushed: ${bamboo.docker.registry}/frontend:${bamboo.buildNumber} ---"
+
+            requirements:
+              - Docker
+
+  # ---------------------------------------------------------------------------
+  # Stage 4: Deploy to Dev
+  # ---------------------------------------------------------------------------
+  - Deploy Dev:
+      manual: false
+      jobs:
+        - Deploy to Dev:
+            key: DDEV
+            tasks:
+              - checkout:
+                  repository: metalstack
+                  force-clean-build: false
+
+              - script:
+                  interpreter: SHELL
+                  description: Deploy to Dev via Helm
+                  scripts:
+                    - |
+                      echo "--- Deploying to Dev Environment ---"
+                      helm upgrade --install ${bamboo.helm.release.name} ${bamboo.helm.chart.path} \
+                        -f ${bamboo.helm.chart.path}/values.yaml \
+                        --namespace metalstack-dev \
+                        --create-namespace \
+                        --set backend.image.tag=${bamboo.buildNumber} \
+                        --set frontend.image.tag=${bamboo.buildNumber} \
+                        --set backend.image.repository=${bamboo.docker.registry}/backend \
+                        --set frontend.image.repository=${bamboo.docker.registry}/frontend \
+                        --wait \
+                        --timeout 5m
+                      echo "--- Dev Deployment Complete ---"
+
+                      echo "--- Running Helm Tests ---"
+                      helm test ${bamboo.helm.release.name} --namespace metalstack-dev --timeout 2m || true
+
+            requirements:
+              - Helm 3
+              - kubectl
+
+  # ---------------------------------------------------------------------------
+  # Stage 5: Deploy to Staging (manual gate)
+  # ---------------------------------------------------------------------------
+  - Deploy Staging:
+      manual: true
+      jobs:
+        - Deploy to Staging:
+            key: DSTG
+            tasks:
+              - checkout:
+                  repository: metalstack
+                  force-clean-build: false
+
+              - script:
+                  interpreter: SHELL
+                  description: Deploy to Staging via Helm
+                  scripts:
+                    - |
+                      echo "--- Deploying to Staging Environment ---"
+                      helm upgrade --install ${bamboo.helm.release.name} ${bamboo.helm.chart.path} \
+                        -f ${bamboo.helm.chart.path}/values-staging.yaml \
+                        --namespace metalstack-staging \
+                        --create-namespace \
+                        --set backend.image.tag=${bamboo.buildNumber} \
+                        --set frontend.image.tag=${bamboo.buildNumber} \
+                        --set backend.image.repository=${bamboo.docker.registry}/backend \
+                        --set frontend.image.repository=${bamboo.docker.registry}/frontend \
+                        --wait \
+                        --timeout 10m
+                      echo "--- Staging Deployment Complete ---"
+
+                      echo "--- Running Helm Tests ---"
+                      helm test ${bamboo.helm.release.name} --namespace metalstack-staging --timeout 2m || true
+
+            requirements:
+              - Helm 3
+              - kubectl
+
+  # ---------------------------------------------------------------------------
+  # Stage 6: Deploy to Production (manual gate)
+  # ---------------------------------------------------------------------------
+  - Deploy Production:
+      manual: true
+      jobs:
+        - Deploy to Production:
+            key: DPROD
+            tasks:
+              - checkout:
+                  repository: metalstack
+                  force-clean-build: false
+
+              - script:
+                  interpreter: SHELL
+                  description: Deploy to Production via Helm
+                  scripts:
+                    - |
+                      echo "--- Deploying to Production Environment ---"
+                      helm upgrade --install ${bamboo.helm.release.name} ${bamboo.helm.chart.path} \
+                        -f ${bamboo.helm.chart.path}/values-prod.yaml \
+                        --namespace metalstack-prod \
+                        --create-namespace \
+                        --set backend.image.tag=${bamboo.buildNumber} \
+                        --set frontend.image.tag=${bamboo.buildNumber} \
+                        --set backend.image.repository=${bamboo.docker.registry}/backend \
+                        --set frontend.image.repository=${bamboo.docker.registry}/frontend \
+                        --wait \
+                        --timeout 15m
+                      echo "--- Production Deployment Complete ---"
+
+                      echo "--- Running Helm Tests ---"
+                      helm test ${bamboo.helm.release.name} --namespace metalstack-prod --timeout 2m || true
+
+            requirements:
+              - Helm 3
+              - kubectl

@@ -1,0 +1,33 @@
+# =============================================================================
+# MetalStack .gitignore
+# =============================================================================
+
+# --- IDE ---
+.vscode/
+.idea/
+*.iml
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- Java / Gradle ---
+backend/build/
+backend/.gradle/
+*.class
+*.jar
+!backend/gradle/wrapper/gradle-wrapper.jar
+
+# --- Node / Frontend ---
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+
+# --- Environment ---
+.env
+.env.*
+!.env.example
+
+# --- Misc ---
+*.log
+*.tmp

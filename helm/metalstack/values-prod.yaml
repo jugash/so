@@ -1,0 +1,81 @@
+# =============================================================================
+# MetalStack Helm Chart — Production Overrides
+# =============================================================================
+
+environment: prod
+
+backend:
+  replicaCount: 3
+
+  resources:
+    requests:
+      cpu: "1"
+      memory: 1Gi
+    limits:
+      cpu: "4"
+      memory: 2Gi
+
+  config:
+    springProfiles: prod
+    corsOrigins: "https://metalstack.internal"
+    appBaseUrl: "https://metalstack.internal"
+    loggingLevel: WARN
+
+  secrets:
+    datasourceUrl: "jdbc:postgresql://metalstack-postgres:5432/metalstack"
+    keycloakIssuerUri: "http://metalstack-keycloak:8080/realms/metalstack"
+    keycloakJwkUri: "http://metalstack-keycloak:8080/realms/metalstack/protocol/openid-connect/certs"
+    # In prod, override these via --set or external secrets manager:
+    # datasourcePassword: <from-vault>
+    # mailPassword: <from-vault>
+
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 65
+
+frontend:
+  replicaCount: 3
+
+  resources:
+    requests:
+      cpu: 200m
+      memory: 128Mi
+    limits:
+      cpu: "1"
+      memory: 256Mi
+
+ingress:
+  host: metalstack.internal
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+  tls:
+    - secretName: metalstack-tls
+      hosts:
+        - metalstack.internal
+
+postgres:
+  resources:
+    requests:
+      cpu: "1"
+      memory: 1Gi
+    limits:
+      cpu: "4"
+      memory: 2Gi
+
+  persistence:
+    storageClass: "fast-ssd"
+    size: 50Gi
+
+keycloak:
+  resources:
+    requests:
+      cpu: "1"
+      memory: 1Gi
+    limits:
+      cpu: "4"
+      memory: 2Gi

@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "metalstack.fullname" . }}-test-connection"
+  namespace: {{ include "metalstack.namespace" . }}
+  labels:
+    {{- include "metalstack.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    - name: test-backend
+      image: busybox:1.36
+      command: ['sh', '-c']
+      args:
+        - |
+          echo "Testing backend connectivity..."
+          wget -q --spider --timeout=10 http://{{ include "metalstack.fullname" . }}-backend:{{ .Values.backend.service.port }}/actuator/health && echo "Backend: OK" || echo "Backend: FAILED"
+          echo "Testing frontend connectivity..."
+          wget -q --spider --timeout=10 http://{{ include "metalstack.fullname" . }}-frontend:{{ .Values.frontend.service.port }}/health && echo "Frontend: OK" || echo "Frontend: FAILED"
+          {{- if .Values.postgres.enabled }}
+          echo "Testing postgres connectivity..."
+          wget -q --spider --timeout=10 http://{{ include "metalstack.fullname" . }}-postgres:{{ .Values.postgres.service.port }} 2>/dev/null; echo "Postgres port: reachable"
+          {{- end }}

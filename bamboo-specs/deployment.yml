@@ -1,0 +1,169 @@
+# =============================================================================
+# MetalStack — Bamboo Deployment Project (YAML Specs v2)
+# =============================================================================
+# This defines the deployment project with environment promotion gates.
+# The build plan (MSTK-BUILD) produces artifacts that flow through
+# dev → staging → prod environments.
+# =============================================================================
+
+---
+version: 2
+
+deployment:
+  name: MetalStack Deployment
+  source-plan: MSTK-BUILD
+
+# ---------------------------------------------------------------------------
+# Release naming convention
+# ---------------------------------------------------------------------------
+release-naming:
+  pattern: "v1.0.0-${bamboo.buildNumber}"
+
+# ---------------------------------------------------------------------------
+# Environments
+# ---------------------------------------------------------------------------
+environments:
+  # -------------------------------------------------------------------------
+  # Development — Auto-triggered on successful build
+  # -------------------------------------------------------------------------
+  - Dev:
+      triggers:
+        - build-success
+
+      tasks:
+        - clean
+
+        - artifact-download:
+            artifacts:
+              - name: Backend JAR
+              - name: Frontend Dist
+
+        - script:
+            interpreter: SHELL
+            description: Deploy to Dev Kubernetes
+            scripts:
+              - |
+                echo "============================================"
+                echo "  Deploying MetalStack to DEV"
+                echo "  Release: ${bamboo.deploy.release}"
+                echo "  Build:   ${bamboo.planRepository.branchName}"
+                echo "============================================"
+
+                # Extract build number from release name
+                BUILD_NUM=$(echo "${bamboo.deploy.release}" | sed 's/v1.0.0-//')
+
+                helm upgrade --install metalstack ./helm/metalstack \
+                  -f ./helm/metalstack/values.yaml \
+                  --namespace metalstack-dev \
+                  --create-namespace \
+                  --set backend.image.tag=${BUILD_NUM} \
+                  --set frontend.image.tag=${BUILD_NUM} \
+                  --wait \
+                  --timeout 5m
+
+                echo "--- Dev deployment successful ---"
+
+      notifications:
+        - type: email
+          recipients:
+            - committers
+          events:
+            - deployment-finished
+            - deployment-failed
+
+  # -------------------------------------------------------------------------
+  # Staging — Manual promotion from Dev
+  # -------------------------------------------------------------------------
+  - Staging:
+      tasks:
+        - clean
+
+        - artifact-download:
+            artifacts:
+              - name: Backend JAR
+              - name: Frontend Dist
+              - name: JaCoCo Coverage
+              - name: Frontend Coverage
+
+        - script:
+            interpreter: SHELL
+            description: Deploy to Staging Kubernetes
+            scripts:
+              - |
+                echo "============================================"
+                echo "  Deploying MetalStack to STAGING"
+                echo "  Release: ${bamboo.deploy.release}"
+                echo "============================================"
+
+                BUILD_NUM=$(echo "${bamboo.deploy.release}" | sed 's/v1.0.0-//')
+
+                helm upgrade --install metalstack ./helm/metalstack \
+                  -f ./helm/metalstack/values-staging.yaml \
+                  --namespace metalstack-staging \
+                  --create-namespace \
+                  --set backend.image.tag=${BUILD_NUM} \
+                  --set frontend.image.tag=${BUILD_NUM} \
+                  --wait \
+                  --timeout 10m
+
+                echo "--- Running post-deploy smoke tests ---"
+                helm test metalstack --namespace metalstack-staging --timeout 2m
+
+                echo "--- Staging deployment successful ---"
+
+      notifications:
+        - type: email
+          recipients:
+            - committers
+          events:
+            - deployment-finished
+            - deployment-failed
+
+  # -------------------------------------------------------------------------
+  # Production — Manual promotion from Staging
+  # -------------------------------------------------------------------------
+  - Production:
+      tasks:
+        - clean
+
+        - artifact-download:
+            artifacts:
+              - name: Backend JAR
+              - name: Frontend Dist
+
+        - script:
+            interpreter: SHELL
+            description: Deploy to Production Kubernetes
+            scripts:
+              - |
+                echo "============================================"
+                echo "  Deploying MetalStack to PRODUCTION"
+                echo "  Release: ${bamboo.deploy.release}"
+                echo "============================================"
+
+                BUILD_NUM=$(echo "${bamboo.deploy.release}" | sed 's/v1.0.0-//')
+
+                # Production deployment with extra caution
+                helm upgrade --install metalstack ./helm/metalstack \
+                  -f ./helm/metalstack/values-prod.yaml \
+                  --namespace metalstack-prod \
+                  --create-namespace \
+                  --set backend.image.tag=${BUILD_NUM} \
+                  --set frontend.image.tag=${BUILD_NUM} \
+                  --wait \
+                  --timeout 15m \
+                  --atomic
+
+                echo "--- Running post-deploy smoke tests ---"
+                helm test metalstack --namespace metalstack-prod --timeout 2m
+
+                echo "--- Production deployment successful ---"
+
+      notifications:
+        - type: email
+          recipients:
+            - committers
+          events:
+            - deployment-started
+            - deployment-finished
+            - deployment-failed

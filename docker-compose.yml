@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  # ---------------------------------------------------------------------------
+  # Infrastructure Services
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: metalstack-postgres
+    environment:
+      POSTGRES_DB: metalstack
+      POSTGRES_USER: metalstack
+      POSTGRES_PASSWORD: metalstack
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U metalstack"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0
+    container_name: metalstack-keycloak
+    command: start-dev --import-realm --health-enabled=true
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_LOG_LEVEL: info
+    ports:
+      - "8180:8080"
+    volumes:
+      - ./keycloak-realm.json:/opt/keycloak/data/import/realm.json:ro
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: metalstack-mailhog
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI
+
+  # ---------------------------------------------------------------------------
+  # Application Services
+  # ---------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../backend/Dockerfile
+    image: metalstack-backend:local
+    container_name: metalstack-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://metalstack-postgres:5432/metalstack
+      SPRING_DATASOURCE_USERNAME: metalstack
+      SPRING_DATASOURCE_PASSWORD: metalstack
+      KEYCLOAK_ISSUER_URI: http://metalstack-keycloak:8080/realms/metalstack
+      KEYCLOAK_JWK_URI: http://metalstack-keycloak:8080/realms/metalstack/protocol/openid-connect/certs
+      CORS_ORIGINS: http://localhost:5173,http://localhost:3000
+      MAIL_HOST: metalstack-mailhog
+      MAIL_PORT: 1025
+      MAIL_FROM: metalstack@internal.dev
+      APP_BASE_URL: http://localhost:5173
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8080
+        VITE_KEYCLOAK_URL: http://localhost:8180
+    image: metalstack-frontend:local
+    container_name: metalstack-frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+
+volumes:
+  pgdata:

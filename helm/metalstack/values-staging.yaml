@@ -1,0 +1,72 @@
+# =============================================================================
+# MetalStack Helm Chart — Staging Overrides
+# =============================================================================
+
+environment: staging
+
+backend:
+  replicaCount: 2
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: "2"
+      memory: 1Gi
+
+  config:
+    springProfiles: staging
+    corsOrigins: "https://metalstack.staging.internal"
+    appBaseUrl: "https://metalstack.staging.internal"
+    loggingLevel: INFO
+
+  secrets:
+    datasourceUrl: "jdbc:postgresql://metalstack-postgres:5432/metalstack"
+    keycloakIssuerUri: "http://metalstack-keycloak:8080/realms/metalstack"
+    keycloakJwkUri: "http://metalstack-keycloak:8080/realms/metalstack/protocol/openid-connect/certs"
+
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 70
+
+frontend:
+  replicaCount: 2
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+ingress:
+  host: metalstack.staging.internal
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+
+postgres:
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: "2"
+      memory: 1Gi
+
+  persistence:
+    size: 20Gi
+
+keycloak:
+  resources:
+    requests:
+      cpu: 500m
+      memory: 768Mi
+    limits:
+      cpu: "2"
+      memory: 1536Mi
