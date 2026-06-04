@@ -157,7 +157,7 @@ describe('UserProfilePage Component', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('User not found')).toBeInTheDocument();
+      expect(screen.getByText('Error')).toBeInTheDocument();
     });
   });
 

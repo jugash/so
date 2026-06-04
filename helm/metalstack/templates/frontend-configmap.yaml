@@ -8,3 +8,4 @@ metadata:
 data:
   BACKEND_SERVICE_NAME: {{ .Values.frontend.config.backendServiceName | quote }}
   BACKEND_SERVICE_PORT: {{ .Values.frontend.config.backendServicePort | quote }}
+  VITE_KEYCLOAK_URL: {{ .Values.frontend.config.keycloakUrl | quote }}

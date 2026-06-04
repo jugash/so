@@ -225,7 +225,6 @@ stages:
 
                       docker build \
                         --build-arg VITE_API_URL=/api \
-                        --build-arg VITE_KEYCLOAK_URL=/auth \
                         -t ${bamboo.docker.registry}/frontend:${bamboo.buildNumber} \
                         -t ${bamboo.docker.registry}/frontend:latest \
                         .

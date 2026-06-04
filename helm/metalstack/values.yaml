@@ -105,10 +105,11 @@ frontend:
       cpu: 200m
       memory: 128Mi
 
-  # Build-time args baked into the Vite bundle
+  # Application configuration
   config:
     backendServiceName: "metalstack-backend"
     backendServicePort: "8080"
+    keycloakUrl: "/auth"
 
   livenessProbe:
     httpGet:

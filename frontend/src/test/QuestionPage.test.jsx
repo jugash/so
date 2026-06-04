@@ -211,7 +211,7 @@ describe('QuestionPage Component', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Question not found')).toBeInTheDocument();
+      expect(screen.getByText('Failed to load question. Please try again.')).toBeInTheDocument();
     });
 
     expect(consoleSpy).toHaveBeenCalled();

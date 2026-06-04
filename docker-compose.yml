@@ -75,11 +75,12 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: http://localhost:8080
-        VITE_KEYCLOAK_URL: http://localhost:8180
     image: metalstack-frontend:local
     container_name: metalstack-frontend
     depends_on:
       - backend
+    environment:
+      VITE_KEYCLOAK_URL: http://localhost:8180
     ports:
       - "3000:80"
 
