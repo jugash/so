@@ -13,17 +13,15 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     keycloak
       .init({
-        onLoad: 'check-sso',
         pkceMethod: 'S256',
         checkLoginIframe: false,
-        silentCheckSsoFallback: false,
       })
       .then((auth) => {
         setAuthenticated(auth);
         if (auth) {
           setToken(keycloak.token);
           setRoles(keycloak.realmAccess?.roles || []);
-          
+
           // Load user profile
           keycloak.loadUserProfile().then((profile) => {
             setUser({
@@ -32,8 +30,8 @@ export const AuthProvider = ({ children }) => {
               email: profile.email,
               firstName: profile.firstName,
               lastName: profile.lastName,
-              displayName: profile.firstName && profile.lastName 
-                ? `${profile.firstName} ${profile.lastName}` 
+              displayName: profile.firstName && profile.lastName
+                ? `${profile.firstName} ${profile.lastName}`
                 : profile.username,
             });
             setLoading(false);
