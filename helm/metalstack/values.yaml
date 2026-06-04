@@ -110,6 +110,8 @@ frontend:
     backendServiceName: "metalstack-backend"
     backendServicePort: "8080"
     keycloakUrl: "/auth"
+    keycloakRealm: "metalstack"
+    keycloakClientId: "metalstack-frontend"
 
   livenessProbe:
     httpGet:

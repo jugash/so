@@ -81,6 +81,8 @@ services:
       - backend
     environment:
       VITE_KEYCLOAK_URL: http://localhost:8180
+      VITE_KEYCLOAK_REALM: metalstack
+      VITE_KEYCLOAK_CLIENT_ID: metalstack-frontend
     ports:
       - "3000:80"
 
