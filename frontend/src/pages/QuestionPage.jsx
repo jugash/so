@@ -29,13 +29,20 @@ const QuestionPage = () => {
   const [showQCommentForm, setShowQCommentForm] = useState(false);
   const [answerComment, setAnswerComment] = useState({}); // { [answerId]: '' }
   const [showACommentForm, setShowACommentForm] = useState({}); // { [answerId]: boolean }
+  const [error, setError] = useState(null);
 
   useEffect(() => {
+    // Reset state when navigating to a different question
+    setQuestion(null);
+    setAnswers([]);
+    setError(null);
+    setLoading(true);
     fetchData();
   }, [id]);
 
   const fetchData = async () => {
     setLoading(true);
+    setError(null);
     try {
       const qRes = await api.get(`/api/questions/${id}`);
       setQuestion(qRes.data);
@@ -44,6 +51,13 @@ const QuestionPage = () => {
       setAnswers(aRes.data);
     } catch (err) {
       console.error('Error fetching question detail:', err);
+      if (err.response?.status === 404) {
+        setError('Question not found.');
+      } else if (err.response?.status === 401) {
+        setError('Authentication error. Please try refreshing the page.');
+      } else {
+        setError('Failed to load question. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -183,10 +197,17 @@ const QuestionPage = () => {
     return (
       <div style={{ textAlign: 'center', padding: '60px' }}>
         <ShieldAlert size={48} style={{ color: 'var(--color-danger)', marginBottom: '16px' }} />
-        <h2>Question not found</h2>
-        <Link to="/" className="btn btn-secondary" style={{ marginTop: '16px' }}>
-          <ArrowLeft size={16} /> Back to Home
-        </Link>
+        <h2>{error || 'Question not found'}</h2>
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '16px' }}>
+          {error && !error.includes('not found') && (
+            <button onClick={fetchData} className="btn btn-primary">
+              Retry
+            </button>
+          )}
+          <Link to="/" className="btn btn-secondary">
+            <ArrowLeft size={16} /> Back to Home
+          </Link>
+        </div>
       </div>
     );
   }

@@ -11,6 +11,7 @@ const UserProfilePage = () => {
   const [profile, setProfile] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [updatingNotifications, setUpdatingNotifications] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
 
@@ -22,8 +23,11 @@ const UserProfilePage = () => {
 
   useEffect(() => {
     setPage(0);
+    setProfile(null);
+    setQuestions([]);
+    setError(null);
     fetchProfile();
-  }, [id, authUser]);
+  }, [id]);
 
   useEffect(() => {
     if (profile) {
@@ -33,6 +37,7 @@ const UserProfilePage = () => {
 
   const fetchProfile = async () => {
     setLoading(true);
+    setError(null);
     try {
       // 1. Fetch user profile
       const profileUrl = id === 'me' ? '/api/users/me' : `/api/users/${id}`;
@@ -40,6 +45,13 @@ const UserProfilePage = () => {
       setProfile(profileRes.data);
     } catch (err) {
       console.error('Error fetching user profile data:', err);
+      if (err.response?.status === 401 && id === 'me') {
+        setError('Please log in to view your profile.');
+      } else if (err.response?.status === 404) {
+        setError('User not found.');
+      } else {
+        setError('Failed to load profile. Please try refreshing the page.');
+      }
     } finally {
       setLoading(false);
     }
@@ -99,10 +111,13 @@ const UserProfilePage = () => {
   if (!profile) {
     return (
       <div className="card" style={{ textAlign: 'center', padding: '40px' }}>
-        <h3>User not found</h3>
+        <h3>{error ? 'Error' : 'User not found'}</h3>
         <p style={{ color: 'var(--text-secondary)', marginTop: '8px' }}>
-          This user profile does not exist or you must be logged in.
+          {error || 'This user profile does not exist or you must be logged in.'}
         </p>
+        <Link to="/" className="btn btn-secondary" style={{ marginTop: '16px', display: 'inline-block' }}>
+          ← Back to Home
+        </Link>
       </div>
     );
   }

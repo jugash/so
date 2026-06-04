@@ -222,11 +222,11 @@ const HomePage = () => {
 
                       <div style={styles.authorInfo}>
                         <span style={{ color: 'var(--text-muted)' }}>asked {formatTime(q.createdAt)} by</span>
-                        <Link to={`/users/${q.authorId}`} style={styles.authorName}>
-                          {q.authorDisplayName}
+                        <Link to={`/users/${q.author?.id || q.authorId}`} style={styles.authorName}>
+                          {q.author?.displayName || q.authorDisplayName}
                         </Link>
                         <span style={styles.reputation} title="User Reputation">
-                          {q.authorReputation || 1}
+                          {q.author?.reputation || q.authorReputation || 1}
                         </span>
                       </div>
                     </div>
