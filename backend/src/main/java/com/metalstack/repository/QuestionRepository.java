@@ -20,6 +20,8 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
 
     Page<Question> findByAuthorIdOrderByCreatedAtDesc(Long authorId, Pageable pageable);
 
+    Page<Question> findByDirectedToIdOrderByCreatedAtDesc(Long directedToId, Pageable pageable);
+
     @Query("SELECT q FROM Question q JOIN q.tags t WHERE t.name = :tagName ORDER BY q.createdAt DESC")
     Page<Question> findByTagName(@Param("tagName") String tagName, Pageable pageable);
 

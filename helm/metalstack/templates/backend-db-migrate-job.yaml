@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "metalstack.fullname" . }}-db-migrate
+  namespace: {{ include "metalstack.namespace" . }}
+  labels:
+    {{- include "metalstack.backend.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  backoffLimit: 10
+  template:
+    metadata:
+      labels:
+        {{- include "metalstack.backend.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: migrate
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          args: ["--spring.main.web-application-type=none"]
+          envFrom:
+            - configMapRef:
+                name: {{ include "metalstack.fullname" . }}-backend-config
+            - secretRef:
+                name: {{ include "metalstack.fullname" . }}-backend-secret
+      restartPolicy: OnFailure

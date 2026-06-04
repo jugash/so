@@ -14,6 +14,9 @@ const AskPage = () => {
   const [tagInput, setTagInput] = useState('');
   const [selectedTags, setSelectedTags] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
+  const [directedUserInput, setDirectedUserInput] = useState('');
+  const [selectedDirectedUser, setSelectedDirectedUser] = useState(null);
+  const [directedUserSuggestions, setDirectedUserSuggestions] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -43,6 +46,27 @@ const AskPage = () => {
 
     return () => clearTimeout(delayDebounceFn);
   }, [tagInput]);
+
+  useEffect(() => {
+    const fetchUserSuggestions = async () => {
+      if (!directedUserInput.trim() || selectedDirectedUser) {
+        setDirectedUserSuggestions([]);
+        return;
+      }
+      try {
+        const response = await api.get(`/api/users/search?q=${encodeURIComponent(directedUserInput.trim())}`);
+        setDirectedUserSuggestions(response.data || []);
+      } catch (err) {
+        console.error('Error fetching user suggestions:', err);
+      }
+    };
+
+    const delayDebounceFn = setTimeout(() => {
+      fetchUserSuggestions();
+    }, 200);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [directedUserInput, selectedDirectedUser]);
 
   const handleAddTag = (tagName) => {
     const cleanName = tagName.trim().toLowerCase().replace(/[^a-z0-9+#-]/g, '');
@@ -98,6 +122,7 @@ const AskPage = () => {
         title: title.trim(),
         body: body.trim(),
         tags: selectedTags,
+        directedToUserId: selectedDirectedUser ? selectedDirectedUser.id : null,
       });
       navigate(`/questions/${response.data.id}`);
     } catch (err) {
@@ -200,6 +225,55 @@ const AskPage = () => {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+
+          {/* Direct to User Card */}
+          <div className="card" style={styles.formCard}>
+            <div style={styles.cardHeader}>
+              <label htmlFor="directed-user" className="input-label" style={styles.formLabel}>Direct to User (Optional)</label>
+              <span style={styles.formHint}>Want to specifically notify a colleague about this question? Search for their username or name.</span>
+            </div>
+            
+            <div style={styles.tagInputWrapper}>
+              {selectedDirectedUser ? (
+                <div style={styles.tagBadgesList}>
+                  <span className="badge tag-badge" style={styles.selectedTag}>
+                    @{selectedDirectedUser.username} ({selectedDirectedUser.displayName})
+                    <button type="button" onClick={() => { setSelectedDirectedUser(null); setDirectedUserInput(''); }} style={styles.removeTagBtn}>
+                      <X size={12} />
+                    </button>
+                  </span>
+                </div>
+              ) : (
+                <div style={{ position: 'relative' }}>
+                  <input
+                    id="directed-user"
+                    type="text"
+                    placeholder="Search users..."
+                    value={directedUserInput}
+                    onChange={(e) => setDirectedUserInput(e.target.value)}
+                    className="input-control"
+                    style={styles.tagsInput}
+                  />
+                  
+                  {/* Suggestions Dropdown */}
+                  {directedUserSuggestions.length > 0 && (
+                    <div style={styles.dropdown}>
+                      {directedUserSuggestions.map((user) => (
+                        <div 
+                          key={user.id} 
+                          onClick={() => { setSelectedDirectedUser(user); setDirectedUserSuggestions([]); }}
+                          style={styles.dropdownItem}
+                        >
+                          <span style={styles.sugName}>@{user.username}</span>
+                          <span style={styles.sugDesc}>– {user.displayName} (Rep: {user.reputation})</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 

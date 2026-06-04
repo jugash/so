@@ -71,6 +71,10 @@ public class Question {
     @Builder.Default
     private Set<Tag> tags = new HashSet<>();
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "directed_to_id")
+    private User directedTo;
+
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();

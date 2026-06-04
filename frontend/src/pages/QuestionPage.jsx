@@ -138,6 +138,36 @@ const QuestionPage = () => {
     }
   };
 
+  const handleToggleCommentLike = async (commentId, isQuestionComment, answerId = null) => {
+    if (!isAuthenticated) {
+      login();
+      return;
+    }
+    try {
+      const response = await api.post(`/api/comments/${commentId}/reactions`);
+      const updatedComment = response.data;
+
+      if (isQuestionComment) {
+        setQuestion(prev => ({
+          ...prev,
+          comments: prev.comments.map(c => c.id === commentId ? updatedComment : c)
+        }));
+      } else {
+        setAnswers(prevAnswers => prevAnswers.map(ans => {
+          if (ans.id === answerId) {
+            return {
+              ...ans,
+              comments: ans.comments.map(c => c.id === commentId ? updatedComment : c)
+            };
+          }
+          return ans;
+        }));
+      }
+    } catch (err) {
+      console.error('Error toggling comment like:', err);
+    }
+  };
+
   const handleCloseQuestion = async () => {
     if (!window.confirm('Are you sure you want to close this question to new answers?')) return;
     try {
@@ -247,6 +277,15 @@ const QuestionPage = () => {
         </div>
       </div>
 
+      {question.directedTo && (
+        <div style={styles.directedBanner}>
+          <span style={styles.directedBannerIcon}>👉</span>
+          <span>
+            This question was directed specifically to <strong>@{question.directedTo.username}</strong> ({question.directedTo.displayName}).
+          </span>
+        </div>
+      )}
+
       <div style={{ display: 'flex', gap: '24px', margin: '20px 0' }}>
         {/* Main Q&A Section */}
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -340,6 +379,21 @@ const QuestionPage = () => {
                           {c.author.displayName}
                         </Link>{' '}
                         <span style={{ color: 'var(--text-muted)' }}>{formatTime(c.createdAt)}</span>
+                        
+                        <button 
+                          onClick={() => handleToggleCommentLike(c.id, true)} 
+                          style={{
+                            background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px', 
+                            marginLeft: '8px',
+                            color: c.likedByCurrentUser ? 'var(--color-primary)' : 'var(--text-muted)'
+                          }}
+                          title={c.likedByCurrentUser ? "Unlike" : "Like"}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill={c.likedByCurrentUser ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '2px', verticalAlign: 'text-bottom' }}>
+                            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                          </svg>
+                          {c.likeCount > 0 ? c.likeCount : ''}
+                        </button>
                       </span>
                     </div>
                   ))}
@@ -482,6 +536,20 @@ const QuestionPage = () => {
                                 {c.author.displayName}
                               </Link>{' '}
                               <span style={{ color: 'var(--text-muted)' }}>{formatTime(c.createdAt)}</span>
+                              <button 
+                                onClick={() => handleToggleCommentLike(c.id, false, ans.id)} 
+                                style={{
+                                  background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px', 
+                                  marginLeft: '8px',
+                                  color: c.likedByCurrentUser ? 'var(--color-primary)' : 'var(--text-muted)'
+                                }}
+                                title={c.likedByCurrentUser ? "Unlike" : "Like"}
+                              >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill={c.likedByCurrentUser ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '2px', verticalAlign: 'text-bottom' }}>
+                                  <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                                </svg>
+                                {c.likeCount > 0 ? c.likeCount : ''}
+                              </button>
                             </span>
                           </div>
                         ))}

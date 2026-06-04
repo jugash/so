@@ -19,4 +19,6 @@ public class QuestionRequest {
     private String body;
 
     private Set<String> tags;
+
+    private Long directedToUserId;
 }

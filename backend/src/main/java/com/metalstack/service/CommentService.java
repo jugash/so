@@ -19,6 +19,7 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
+    private final CommentReactionRepository commentReactionRepository;
 
     @Transactional
     public CommentResponse addCommentToQuestion(Long questionId, CommentRequest request, User author) {
@@ -32,7 +33,7 @@ public class CommentService {
                 .build();
 
         comment = commentRepository.save(comment);
-        return toResponse(comment);
+        return toResponse(comment, author.getId());
     }
 
     @Transactional
@@ -47,15 +48,41 @@ public class CommentService {
                 .build();
 
         comment = commentRepository.save(comment);
-        return toResponse(comment);
+        return toResponse(comment, author.getId());
     }
 
-    private CommentResponse toResponse(Comment c) {
+    @Transactional
+    public CommentResponse toggleLike(Long commentId, User user) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Comment", "id", commentId));
+
+        commentReactionRepository.findByCommentIdAndUserIdAndReactionType(commentId, user.getId(), "LIKE")
+                .ifPresentOrElse(
+                        commentReactionRepository::delete,
+                        () -> commentReactionRepository.save(CommentReaction.builder()
+                                .comment(comment)
+                                .user(user)
+                                .reactionType("LIKE")
+                                .build())
+                );
+        
+        return toResponse(comment, user.getId());
+    }
+
+    private CommentResponse toResponse(Comment c, Long currentUserId) {
+        int likeCount = commentReactionRepository.countByCommentIdAndReactionType(c.getId(), "LIKE");
+        boolean likedByCurrentUser = false;
+        if (currentUserId != null) {
+            likedByCurrentUser = commentReactionRepository.existsByCommentIdAndUserIdAndReactionType(c.getId(), currentUserId, "LIKE");
+        }
+
         return CommentResponse.builder()
                 .id(c.getId())
                 .body(c.getBody())
                 .author(UserService.toUserSummary(c.getAuthor()))
                 .createdAt(c.getCreatedAt())
+                .likeCount(likeCount)
+                .likedByCurrentUser(likedByCurrentUser)
                 .build();
     }
 }

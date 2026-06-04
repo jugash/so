@@ -23,4 +23,5 @@ public class QuestionResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Integer userVote; // +1, -1, or null
+    private UserSummary directedTo;
 }

@@ -22,6 +22,8 @@ public class QuestionService {
     private final CommentRepository commentRepository;
     private final VoteRepository voteRepository;
     private final TagService tagService;
+    private final UserRepository userRepository;
+    private final CommentReactionRepository commentReactionRepository;
 
     public Page<QuestionResponse> getQuestions(String sort, String tag, Pageable pageable, Long currentUserId) {
         Page<Question> questions;
@@ -55,11 +57,17 @@ public class QuestionService {
     public QuestionResponse createQuestion(QuestionRequest request, User author) {
         Set<Tag> tags = tagService.getOrCreateTags(request.getTags());
 
+        User directedTo = null;
+        if (request.getDirectedToUserId() != null) {
+            directedTo = userRepository.findById(request.getDirectedToUserId()).orElse(null);
+        }
+
         Question question = Question.builder()
                 .title(request.getTitle())
                 .body(request.getBody())
                 .author(author)
                 .tags(tags)
+                .directedTo(directedTo)
                 .build();
 
         question = questionRepository.save(question);
@@ -153,7 +161,7 @@ public class QuestionService {
     private QuestionResponse toResponse(Question q, Long currentUserId) {
         List<CommentResponse> comments = commentRepository.findByQuestionIdOrderByCreatedAtAsc(q.getId())
                 .stream()
-                .map(this::toCommentResponse)
+                .map(c -> toCommentResponse(c, currentUserId))
                 .toList();
 
         Integer userVote = null;
@@ -178,15 +186,24 @@ public class QuestionService {
                 .createdAt(q.getCreatedAt())
                 .updatedAt(q.getUpdatedAt())
                 .userVote(userVote)
+                .directedTo(q.getDirectedTo() != null ? UserService.toUserSummary(q.getDirectedTo()) : null)
                 .build();
     }
 
-    private CommentResponse toCommentResponse(Comment c) {
+    private CommentResponse toCommentResponse(Comment c, Long currentUserId) {
+        int likeCount = commentReactionRepository.countByCommentIdAndReactionType(c.getId(), "LIKE");
+        boolean likedByCurrentUser = false;
+        if (currentUserId != null) {
+            likedByCurrentUser = commentReactionRepository.existsByCommentIdAndUserIdAndReactionType(c.getId(), currentUserId, "LIKE");
+        }
+
         return CommentResponse.builder()
                 .id(c.getId())
                 .body(c.getBody())
                 .author(UserService.toUserSummary(c.getAuthor()))
                 .createdAt(c.getCreatedAt())
+                .likeCount(likeCount)
+                .likedByCurrentUser(likedByCurrentUser)
                 .build();
     }
 }

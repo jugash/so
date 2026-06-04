@@ -218,6 +218,11 @@ const HomePage = () => {
                             {t.name}
                           </Link>
                         ))}
+                        {q.directedTo && (
+                          <span className="badge" style={{ background: 'rgba(234, 179, 8, 0.1)', color: '#eab308', border: '1px solid rgba(234, 179, 8, 0.2)' }}>
+                            @{q.directedTo.username}
+                          </span>
+                        )}
                       </div>
 
                       <div style={styles.authorInfo}>

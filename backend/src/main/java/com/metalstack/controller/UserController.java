@@ -39,6 +39,14 @@ public class UserController {
         return ResponseEntity.ok(userService.getProfile(id));
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<java.util.List<com.metalstack.dto.UserSummary>> searchUsers(@RequestParam String q) {
+        if (q == null || q.trim().isEmpty()) {
+            return ResponseEntity.ok(java.util.Collections.emptyList());
+        }
+        return ResponseEntity.ok(userService.searchUsers(q.trim()));
+    }
+
     @GetMapping("/{id}/questions")
     public ResponseEntity<Page<QuestionResponse>> getUserQuestions(
             @PathVariable Long id,

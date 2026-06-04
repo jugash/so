@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { 
   Layers, Search, LogIn, LogOut, User, 
   Home, Tag, PlusCircle, HelpCircle, Bell,
-  Sun, Moon
+  Sun, Moon, ChevronLeft, ChevronRight
 } from 'lucide-react';
 
 const Layout = ({ children }) => {
@@ -14,6 +13,7 @@ const Layout = ({ children }) => {
     const saved = localStorage.getItem('theme');
     return saved || 'dark';
   });
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -93,27 +93,45 @@ const Layout = ({ children }) => {
       {/* Main Body Layout */}
       <div className="main-layout">
         {/* Navigation Sidebar */}
-        <aside style={styles.sidebar}>
+        <aside style={{
+          ...styles.sidebar,
+          width: sidebarCollapsed ? '72px' : '240px',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 8px 16px' }}>
+            <button 
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              style={styles.collapseBtn}
+              title={sidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+            >
+              {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+            </button>
+          </div>
           <nav style={styles.nav}>
             <Link 
               to="/" 
               style={{
                 ...styles.navLink,
-                ...(isActive('/') ? styles.navLinkActive : {})
+                ...(isActive('/') ? styles.navLinkActive : {}),
+                justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+                padding: sidebarCollapsed ? '12px 0' : '12px 16px',
               }}
+              title="Home"
             >
               <Home size={18} />
-              Home
+              {!sidebarCollapsed && <span>Home</span>}
             </Link>
             <Link 
               to="/tags" 
               style={{
                 ...styles.navLink,
-                ...(isActive('/tags') ? styles.navLinkActive : {})
+                ...(isActive('/tags') ? styles.navLinkActive : {}),
+                justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+                padding: sidebarCollapsed ? '12px 0' : '12px 16px',
               }}
+              title="Tags"
             >
               <Tag size={18} />
-              Tags
+              {!sidebarCollapsed && <span>Tags</span>}
             </Link>
             
             {isAuthenticated && (
@@ -121,11 +139,14 @@ const Layout = ({ children }) => {
                 to="/ask" 
                 style={{
                   ...styles.navLink,
-                  ...(isActive('/ask') ? styles.navLinkActive : {})
+                  ...(isActive('/ask') ? styles.navLinkActive : {}),
+                  justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+                  padding: sidebarCollapsed ? '12px 0' : '12px 16px',
                 }}
+                title="Ask Question"
               >
                 <PlusCircle size={18} />
-                Ask Question
+                {!sidebarCollapsed && <span>Ask Question</span>}
               </Link>
             )}
             
@@ -134,19 +155,22 @@ const Layout = ({ children }) => {
                 to="/users/me" 
                 style={{
                   ...styles.navLink,
-                  ...(isActive('/users/me') ? styles.navLinkActive : {})
+                  ...(isActive('/users/me') ? styles.navLinkActive : {}),
+                  justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+                  padding: sidebarCollapsed ? '12px 0' : '12px 16px',
                 }}
+                title="My Profile"
               >
                 <User size={18} />
-                My Profile
+                {!sidebarCollapsed && <span>My Profile</span>}
               </Link>
             )}
           </nav>
 
-          <div style={styles.sidebarFooter}>
+          <div style={{...styles.sidebarFooter, justifyContent: sidebarCollapsed ? 'center' : 'flex-start'}}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
               <HelpCircle size={14} />
-              <span>MetalStack Internal v1.0</span>
+              {!sidebarCollapsed && <span>MetalStack Internal v1.0</span>}
             </div>
           </div>
         </aside>
@@ -261,7 +285,6 @@ const styles = {
     transition: 'var(--transition-fast)',
   },
   sidebar: {
-    width: '240px',
     flexShrink: 0,
     display: 'flex',
     flexDirection: 'column',
@@ -269,6 +292,19 @@ const styles = {
     height: 'calc(100vh - 100px)',
     position: 'sticky',
     top: '80px',
+    transition: 'width var(--transition-normal)',
+  },
+  collapseBtn: {
+    background: 'var(--bg-secondary)',
+    border: '1px solid var(--border-color)',
+    color: 'var(--text-secondary)',
+    cursor: 'pointer',
+    padding: '4px',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'var(--transition-fast)',
   },
   nav: {
     display: 'flex',

@@ -46,6 +46,13 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
     }
 
+    public java.util.List<UserSummary> searchUsers(String query) {
+        return userRepository.findByUsernameContainingIgnoreCaseOrDisplayNameContainingIgnoreCase(query, query)
+                .stream()
+                .map(UserService::toUserSummary)
+                .toList();
+    }
+
     public static UserSummary toUserSummary(User user) {
         return UserSummary.builder()
                 .id(user.getId())

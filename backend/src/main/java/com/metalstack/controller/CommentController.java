@@ -34,4 +34,10 @@ public class CommentController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(commentService.addCommentToAnswer(answerId, request, user));
     }
+
+    @PostMapping("/comments/{commentId}/reactions")
+    public ResponseEntity<CommentResponse> toggleReaction(@PathVariable Long commentId) {
+        User user = currentUser.get();
+        return ResponseEntity.ok(commentService.toggleLike(commentId, user));
+    }
 }
