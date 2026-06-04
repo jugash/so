@@ -28,6 +28,10 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ include "metalstack.fullname" . }}-frontend-config
+          volumeMounts:
+            - name: env-config-volume
+              mountPath: /usr/share/nginx/html/env-config.js
+              subPath: env-config.js
           {{- with .Values.frontend.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}
@@ -38,4 +42,11 @@ spec:
           {{- end }}
           resources:
             {{- toYaml .Values.frontend.resources | nindent 12 }}
+      volumes:
+        - name: env-config-volume
+          configMap:
+            name: {{ include "metalstack.fullname" . }}-frontend-config
+            items:
+              - key: env-config.js
+                path: env-config.js
       restartPolicy: Always
