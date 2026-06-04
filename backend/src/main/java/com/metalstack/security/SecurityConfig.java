@@ -17,9 +17,12 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.List;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@ConditionalOnWebApplication
 @RequiredArgsConstructor
 public class SecurityConfig {
 

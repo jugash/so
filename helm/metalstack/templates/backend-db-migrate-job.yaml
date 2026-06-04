@@ -19,7 +19,10 @@ spec:
         - name: migrate
           image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
-          args: ["--spring.main.web-application-type=none"]
+          args: [
+            "--spring.main.web-application-type=none",
+            "--spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration,org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration"
+          ]
           envFrom:
             - configMapRef:
                 name: {{ include "metalstack.fullname" . }}-backend-config
