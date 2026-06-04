@@ -14,9 +14,9 @@ export const AuthProvider = ({ children }) => {
     keycloak
       .init({
         onLoad: 'check-sso',
-        silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
         pkceMethod: 'S256',
         checkLoginIframe: false,
+        silentCheckSsoFallback: false,
       })
       .then((auth) => {
         setAuthenticated(auth);
