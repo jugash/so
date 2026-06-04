@@ -23,7 +23,7 @@ backend:
   image:
     repository: registry.internal.example.com/metalstack/backend
     tag: "latest"
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
 
   service:
     type: ClusterIP
@@ -91,7 +91,7 @@ frontend:
   image:
     repository: registry.internal.example.com/metalstack/frontend
     tag: "latest"
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
 
   service:
     type: ClusterIP
