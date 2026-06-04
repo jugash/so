@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import {
   Layers, Search, LogIn, LogOut, User, 
   Home, Tag, PlusCircle, HelpCircle, Bell,
   Sun, Moon, ChevronLeft, ChevronRight
