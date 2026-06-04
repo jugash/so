@@ -43,6 +43,10 @@ frontend:
       cpu: 500m
       memory: 256Mi
 
+  config:
+    keycloakUrl: "/auth"
+    proxyKeycloakUrl: "https://keycloak.external.com"
+
 ingress:
   host: metalstack.staging.internal
   annotations:

@@ -40,7 +40,9 @@ RUN addgroup -g 1001 -S appgroup && \
     chown -R appuser:appgroup /var/cache/nginx && \
     chown -R appuser:appgroup /var/log/nginx && \
     touch /var/run/nginx.pid && \
-    chown -R appuser:appgroup /var/run/nginx.pid
+    chown -R appuser:appgroup /var/run/nginx.pid && \
+    chgrp -R 0 /etc/nginx/conf.d && \
+    chmod -R g+w /etc/nginx/conf.d
 
 # Copy and setup entrypoint script
 COPY entrypoint.sh /entrypoint.sh

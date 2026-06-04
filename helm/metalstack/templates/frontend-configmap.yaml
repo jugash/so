@@ -11,6 +11,9 @@ data:
   VITE_KEYCLOAK_URL: {{ .Values.frontend.config.keycloakUrl | quote }}
   VITE_KEYCLOAK_REALM: {{ .Values.frontend.config.keycloakRealm | quote }}
   VITE_KEYCLOAK_CLIENT_ID: {{ .Values.frontend.config.keycloakClientId | quote }}
+  {{- if .Values.frontend.config.proxyKeycloakUrl }}
+  PROXY_KEYCLOAK_URL: {{ .Values.frontend.config.proxyKeycloakUrl | quote }}
+  {{- end }}
   env-config.js: |
     window._env_ = {
       VITE_KEYCLOAK_URL: {{ .Values.frontend.config.keycloakUrl | quote }},

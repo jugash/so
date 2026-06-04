@@ -111,6 +111,7 @@ describe('AskPage Component', () => {
         title: 'Valid Title of the Question',
         body: 'Valid Body Content of the Question that is more than twenty characters long',
         tags: ['react'],
+        directedToUserId: null,
       });
       expect(mockNavigate).toHaveBeenCalledWith('/questions/999');
     });

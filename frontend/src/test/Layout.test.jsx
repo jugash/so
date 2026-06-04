@@ -152,7 +152,7 @@ describe('Layout Component', () => {
         <Layout><div>Content</div></Layout>
       </MemoryRouter>
     );
-    expect(screen.getByText('Home')).toHaveStyle({ color: 'var(--color-primary)', fontWeight: '600' });
+    expect(screen.getByTitle('Home')).toHaveStyle({ color: 'var(--color-primary)', fontWeight: '600' });
   });
 
   it('highlights the Tags link when on path /tags', () => {
@@ -162,7 +162,7 @@ describe('Layout Component', () => {
         <Layout><div>Content</div></Layout>
       </MemoryRouter>
     );
-    expect(screen.getByText('Tags')).toHaveStyle({ color: 'var(--color-primary)', fontWeight: '600' });
+    expect(screen.getByTitle('Tags')).toHaveStyle({ color: 'var(--color-primary)', fontWeight: '600' });
   });
 
   it('highlights the Ask Question link when on path /ask', () => {
@@ -172,7 +172,7 @@ describe('Layout Component', () => {
         <Layout><div>Content</div></Layout>
       </MemoryRouter>
     );
-    expect(screen.getByText('Ask Question')).toHaveStyle({ color: 'var(--color-primary)', fontWeight: '600' });
+    expect(screen.getByTitle('Ask Question')).toHaveStyle({ color: 'var(--color-primary)', fontWeight: '600' });
   });
 
   it('highlights the My Profile link when on path /users/me', () => {
@@ -182,7 +182,7 @@ describe('Layout Component', () => {
         <Layout><div>Content</div></Layout>
       </MemoryRouter>
     );
-    expect(screen.getByText('My Profile')).toHaveStyle({ color: 'var(--color-primary)', fontWeight: '600' });
+    expect(screen.getByTitle('My Profile')).toHaveStyle({ color: 'var(--color-primary)', fontWeight: '600' });
   });
 });
 
