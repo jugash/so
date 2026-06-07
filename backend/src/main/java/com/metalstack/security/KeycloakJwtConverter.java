@@ -32,6 +32,9 @@ public class KeycloakJwtConverter implements Converter<Jwt, AbstractAuthenticati
                 keycloakAuthorities.stream()
         ).collect(Collectors.toSet());
 
+        // Ensure all authenticated users have the default USER role
+        allAuthorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+
         return new JwtAuthenticationToken(jwt, allAuthorities, jwt.getClaimAsString("preferred_username"));
     }
 

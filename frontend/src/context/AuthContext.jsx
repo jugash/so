@@ -25,7 +25,11 @@ export const AuthProvider = ({ children }) => {
         setAuthenticated(auth);
         if (auth) {
           setToken(keycloak.token);
-          setRoles(keycloak.realmAccess?.roles || []);
+          const extractedRoles = keycloak.realmAccess?.roles || [];
+          if (!extractedRoles.includes('USER')) {
+            extractedRoles.push('USER');
+          }
+          setRoles(extractedRoles);
 
           // Load user profile
           keycloak.loadUserProfile().then((profile) => {
