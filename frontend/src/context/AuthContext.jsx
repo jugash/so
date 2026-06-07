@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import keycloak from '../auth/keycloak';
 
 const AuthContext = createContext(null);
@@ -9,8 +9,12 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
   const [roles, setRoles] = useState([]);
+  const isRun = useRef(false);
 
   useEffect(() => {
+    if (isRun.current) return;
+    isRun.current = true;
+
     keycloak
       .init({
         onLoad: 'check-sso',
