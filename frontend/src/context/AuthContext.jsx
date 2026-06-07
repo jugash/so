@@ -13,6 +13,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     keycloak
       .init({
+        onLoad: 'check-sso',
         pkceMethod: 'S256',
         checkLoginIframe: false,
       })
