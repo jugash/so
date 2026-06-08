@@ -17,6 +17,18 @@ echo "};" >> /usr/share/nginx/html/env-config.js
 chown appuser:appgroup /usr/share/nginx/html/env-config.js || true
 
 # Perform placeholder replacement in Nginx configuration
+if [ -n "$BACKEND_SERVICE_NAME" ]; then
+  sed -i "s|__BACKEND_SERVICE_NAME__|$BACKEND_SERVICE_NAME|g" /etc/nginx/conf.d/metalstack.conf
+else
+  sed -i "s|__BACKEND_SERVICE_NAME__|metalstack-backend|g" /etc/nginx/conf.d/metalstack.conf
+fi
+
+if [ -n "$BACKEND_SERVICE_PORT" ]; then
+  sed -i "s|__BACKEND_SERVICE_PORT__|$BACKEND_SERVICE_PORT|g" /etc/nginx/conf.d/metalstack.conf
+else
+  sed -i "s|__BACKEND_SERVICE_PORT__|8080|g" /etc/nginx/conf.d/metalstack.conf
+fi
+
 if [ -n "$PROXY_KEYCLOAK_URL" ]; then
   # Strip trailing slash if present
   PROXY_KEYCLOAK_URL_CLEANED=$(echo "$PROXY_KEYCLOAK_URL" | sed 's|/$||')
