@@ -36,6 +36,9 @@ public class CurrentUser {
         Jwt jwt = jwtAuth.getToken();
         String keycloakId = jwt.getSubject();
         String username = jwt.getClaimAsString("preferred_username");
+        if (username == null || username.isBlank()) {
+            username = keycloakId; // Fallback to subject
+        }
         String email = jwt.getClaimAsString("email");
         String rawDisplayName = jwt.getClaimAsString("name");
         final String displayName = (rawDisplayName == null || rawDisplayName.isBlank()) ? username : rawDisplayName;

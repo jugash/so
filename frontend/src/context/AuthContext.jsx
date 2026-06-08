@@ -35,21 +35,22 @@ export const AuthProvider = ({ children }) => {
           keycloak.loadUserProfile().then((profile) => {
             setUser({
               id: profile.id,
-              username: profile.username,
+              username: profile.username || keycloak.subject,
               email: profile.email,
               firstName: profile.firstName,
               lastName: profile.lastName,
               displayName: profile.firstName && profile.lastName
                 ? `${profile.firstName} ${profile.lastName}`
-                : profile.username,
+                : (profile.username || keycloak.subject),
             });
             setLoading(false);
           }).catch((err) => {
             console.error('Failed to load user profile', err);
             setUser({
-              username: keycloak.tokenParsed?.preferred_username,
+              id: keycloak.subject,
+              username: keycloak.tokenParsed?.preferred_username || keycloak.subject,
               email: keycloak.tokenParsed?.email,
-              displayName: keycloak.tokenParsed?.name || keycloak.tokenParsed?.preferred_username,
+              displayName: keycloak.tokenParsed?.name || keycloak.tokenParsed?.preferred_username || keycloak.subject,
             });
             setLoading(false);
           });
