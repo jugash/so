@@ -13,7 +13,7 @@ RUN npm ci --production=false
 COPY . .
 
 # Build-time environment variables (baked into the Vite bundle)
-ARG VITE_API_URL=/api
+ARG VITE_API_URL=""
 
 ENV VITE_API_URL=${VITE_API_URL}
 
